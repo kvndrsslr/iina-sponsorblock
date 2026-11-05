@@ -28,9 +28,19 @@ make build                     # dist/SponsorBlock.iinaplugin + dist/SponsorBloc
 # IINA > Settings > Plugins > Install Local Package... and pick the .iinaplgz
 ```
 
+Or install from GitHub: **IINA → Settings → Plugins → *Install from GitHub…*** and enter
+`kvndrsslr/iina-sponsorblock`. IINA downloads the `.iinaplgz` from the latest release and prompts
+for an update when `ghVersion` in `Info.json` increases.
+
 The plugin stays disabled until it is enabled once in Settings > Plugins. A "SponsorBlock" tab
 appears in the sidebar and a "SponsorBlock" section in the Plugin menu while a player window is
 focused.
+
+## Releasing
+
+Bump `version` and `ghVersion` in `Info.json`, commit, then push a `v<version>` tag. The release
+workflow runs the tests, builds the package and attaches it to the GitHub release; IINA compares
+`ghVersion` against `main` and prompts installed users when it increases.
 
 ## Behaviour
 

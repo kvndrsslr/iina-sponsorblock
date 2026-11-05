@@ -2,6 +2,8 @@
   "name": "SponsorBlock",
   "version": "2.1.0",
   "identifier": "com.kdressler.iina-sponsorblock",
+  "ghRepo": "kvndrsslr/iina-sponsorblock",
+  "ghVersion": 1,
   "author": {
     "name": "kdressler"
   },
