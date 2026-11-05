@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SponsorBlock</title>
+  <style>
+    body { padding: 0; }
+    .row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+    .row > label { flex: 0 0 190px; }
+    .row > input[type="text"], .row > input[type="number"] { flex: 1 1 auto; min-width: 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  </style>
+</head>
+<body>
+  <div class="pref-section">
+    <strong>Skipping</strong>
+    <label style="display:block; margin-top:2px">
+      <input type="checkbox" data-type="bool" data-pref-key="skip"> Skip segments automatically
+    </label>
+    <label style="display:block; margin-top:2px">
+      <input type="checkbox" data-type="bool" data-pref-key="skip_once"> Skip each segment only once
+    </label>
+    <div class="row" style="margin-top:6px">
+      <label for="skip-categories">Skip categories</label>
+      <input id="skip-categories" type="text" data-pref-key="skip_categories" spellcheck="false" placeholder="sponsor">
+    </div>
+    <p class="small secondary pref-help">
+      Comma separated, for example <span class="mono">sponsor,selfpromo,intro</span>.
+      These are the categories that are acted on; the ones below are only fetched.
+    </p>
+    <div class="row">
+      <label for="min-duration">Minimum duration (s)</label>
+      <input id="min-duration" type="number" step="0.5" data-type="float" data-pref-key="min_duration">
+    </div>
+    <div class="row">
+      <label for="toggle-key">Toggle shortcut</label>
+      <input id="toggle-key" type="text" data-pref-key="toggle_key" spellcheck="false" placeholder="b">
+    </div>
+    <p class="small secondary pref-help">
+      Shortcut for the menu item "Skip Segments", and for turning skipping on and off in the
+      current file. Menu shortcuts are rebuilt when a file is loaded.
+    </p>
+    <div class="row">
+      <label for="sidebar-key">Show segments shortcut</label>
+      <input id="sidebar-key" type="text" data-pref-key="sidebar_key" spellcheck="false" placeholder="Meta+Shift+b">
+    </div>
+    <p class="small secondary pref-help">
+      Shortcut for "Show Sponsor Segments", which opens the sidebar tab.
+    </p>
+  </div>
+
+  <div class="pref-section">
+    <strong>Data</strong>
+    <div class="row">
+      <label for="server">Server</label>
+      <input id="server" type="text" data-pref-key="server_address" spellcheck="false"
+             placeholder="https://sponsor.ajay.app">
+    </div>
+    <div class="row">
+      <label for="categories">Fetch categories</label>
+      <input id="categories" type="text" data-pref-key="categories" spellcheck="false"
+             placeholder="sponsor,intro,outro,interaction,selfpromo,filler">
+    </div>
+    <div class="row">
+      <label for="sha">Hash prefix length</label>
+      <input id="sha" type="number" min="0" max="32" step="1" data-type="int" data-pref-key="sha256_length">
+    </div>
+    <p class="small secondary pref-help">
+      Between 3 and 32, the video ID is hashed and only that many characters are sent
+      (privacy mode). Set 0 to send the plain video ID.
+    </p>
+    <div class="row">
+      <label for="local-pattern">Local filename pattern</label>
+      <input id="local-pattern" type="text" data-pref-key="local_pattern" spellcheck="false">
+    </div>
+    <p class="small secondary pref-help">
+      A JavaScript regular expression whose first group is the 11 character video ID,
+      applied to the file path. Empty disables it. yt-dlp's default naming works with
+      <span class="mono">-([A-Za-z0-9_-]{11})\.[A-Za-z0-9]+$</span>.
+    </p>
+  </div>
+
+  <div class="pref-section">
+    <strong>Playback</strong>
+    <label style="display:block; margin-top:2px">
+      <input type="checkbox" data-type="bool" data-pref-key="fast_forward">
+      Fast forward through segments instead of seeking over them
+    </label>
+    <div class="row" style="margin-top:4px">
+      <label for="ff-increase">Speed increase per second</label>
+      <input id="ff-increase" type="number" step="0.05" data-type="float" data-pref-key="fast_forward_increase">
+    </div>
+    <div class="row">
+      <label for="ff-cap">Speed cap</label>
+      <input id="ff-cap" type="number" step="0.1" data-type="float" data-pref-key="fast_forward_cap">
+    </div>
+    <label style="display:block; margin-top:6px">
+      <input type="checkbox" data-type="bool" data-pref-key="audio_fade"> Fade audio near segments
+    </label>
+    <div class="row" style="margin-top:4px">
+      <label for="fade-step">Fade step (every 100 ms)</label>
+      <input id="fade-step" type="number" step="1" data-type="float" data-pref-key="audio_fade_step">
+    </div>
+    <div class="row">
+      <label for="fade-cap">Volume floor</label>
+      <input id="fade-cap" type="number" step="1" data-type="float" data-pref-key="audio_fade_cap">
+    </div>
+  </div>
+
+  <div class="pref-section">
+    <strong>Contributing</strong>
+    <div class="row">
+      <label for="user-id">User ID</label>
+      <input id="user-id" type="text" data-pref-key="user_id" spellcheck="false">
+    </div>
+    <p class="small secondary pref-help">
+      A random 36 character ID is generated on first use. It identifies your votes and
+      submissions to the server; leave empty to get a new one.
+    </p>
+    <div class="row">
+      <label for="display-name">Display name</label>
+      <input id="display-name" type="text" data-pref-key="display_name" spellcheck="false">
+    </div>
+    <label style="display:block; margin-top:6px">
+      <input type="checkbox" data-type="bool" data-pref-key="report_views"> Tell the server when a segment is skipped
+    </label>
+    <label style="display:block; margin-top:2px">
+      <input type="checkbox" data-type="bool" data-pref-key="auto_upvote"> Upvote skipped segments automatically
+    </label>
+    <div class="row" style="margin-top:6px">
+      <label for="set-key">Set boundaries</label>
+      <input id="set-key" type="text" data-pref-key="set_segment_key" spellcheck="false" placeholder="g">
+    </div>
+    <div class="row">
+      <label for="submit-key">Submit segment</label>
+      <input id="submit-key" type="text" data-pref-key="submit_segment_key" spellcheck="false" placeholder="G">
+    </div>
+    <div class="row">
+      <label for="up-key">Upvote last</label>
+      <input id="up-key" type="text" data-pref-key="upvote_key" spellcheck="false" placeholder="h">
+    </div>
+    <div class="row">
+      <label for="down-key">Downvote last</label>
+      <input id="down-key" type="text" data-pref-key="downvote_key" spellcheck="false" placeholder="H">
+    </div>
+  </div>
+</body>
+</html>

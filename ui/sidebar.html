@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SponsorBlock</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --fg: #1d1d1f;
+      --muted: rgba(0, 0, 0, 0.55);
+      --line: rgba(0, 0, 0, 0.12);
+      --row: rgba(0, 0, 0, 0.035);
+      --row-current: rgba(0, 122, 255, 0.16);
+      --accent: #007aff;
+      --danger: #d70015;
+      --ok: #248a3d;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --fg: #e8e8ed;
+        --muted: rgba(255, 255, 255, 0.55);
+        --line: rgba(255, 255, 255, 0.14);
+        --row: rgba(255, 255, 255, 0.045);
+        --row-current: rgba(10, 132, 255, 0.24);
+        --accent: #0a84ff;
+        --danger: #ff453a;
+        --ok: #32d74b;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font: 12px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      color: var(--fg);
+      display: flex;
+      flex-direction: column;
+      padding: 10px 10px 8px;
+      gap: 8px;
+      overflow: hidden;
+    }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    h1 { font-size: 13px; font-weight: 600; margin: 0; letter-spacing: 0.1px; }
+    .status { color: var(--muted); font-size: 11px; min-height: 14px; }
+    .status[data-kind="error"] { color: var(--danger); }
+    .status[data-kind="ready"] { color: var(--fg); }
+
+    .switch { position: relative; width: 30px; height: 18px; flex: 0 0 auto; }
+    .switch input { opacity: 0; width: 100%; height: 100%; margin: 0; position: absolute; cursor: pointer; }
+    .switch span {
+      position: absolute; inset: 0; border-radius: 9px;
+      background: var(--line); transition: background 120ms ease;
+      pointer-events: none;
+    }
+    .switch span::after {
+      content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+      border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      transition: transform 120ms ease;
+    }
+    .switch input:checked + span { background: var(--ok); }
+    .switch input:checked + span::after { transform: translateX(12px); }
+
+    .segments {
+      flex: 1 1 auto; overflow-y: auto; min-height: 60px;
+      display: flex; flex-direction: column; gap: 4px;
+      margin: 0 -4px; padding: 0 4px;
+    }
+    .empty { color: var(--muted); padding: 10px 2px; }
+    .row {
+      display: grid; grid-template-columns: 1fr auto; gap: 2px 6px;
+      padding: 6px 8px; border-radius: 7px; background: var(--row);
+      border: 1px solid transparent;
+    }
+    .row.current { background: var(--row-current); border-color: var(--accent); }
+    .row.skipped .time, .row.skipped .category { opacity: 0.55; }
+    .time { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .category { grid-column: 1; color: var(--muted); text-transform: capitalize; }
+    .actions { grid-row: 1 / span 2; grid-column: 2; display: flex; align-items: center; gap: 2px; }
+    button {
+      font: inherit; color: var(--fg); background: var(--row); border: 1px solid var(--line);
+      border-radius: 6px; padding: 3px 7px; cursor: pointer;
+    }
+    button:hover { background: var(--row-current); }
+    button:disabled { opacity: 0.4; cursor: default; background: transparent; }
+    .icon { padding: 3px 6px; min-width: 24px; }
+    .icon.on { border-color: var(--accent); color: var(--accent); }
+
+    #editor { border-top: 1px solid var(--line); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .section-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .bounds { font-variant-numeric: tabular-nums; }
+    .bounds .unset { color: var(--muted); }
+    .row2 { display: flex; gap: 6px; }
+    .row2 > select { flex: 1 1 auto; font: inherit; color: var(--fg); background: var(--row); border: 1px solid var(--line); border-radius: 6px; padding: 3px 4px; }
+    .row2 > button { flex: 0 0 auto; }
+    .link { background: transparent; border-color: transparent; color: var(--accent); padding-left: 0; }
+    .link:hover { background: transparent; text-decoration: underline; }
+    footer { display: flex; justify-content: space-between; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    #app { display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-height: 0; }
+    #app[hidden] { display: none; }
+    #no-video {
+      margin: auto 0;
+      padding: 0 12px;
+      text-align: center;
+      color: var(--muted);
+    }
+    #no-video[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <div id="app" hidden>
+  <header>
+    <h1>SponsorBlock</h1>
+    <label class="switch" title="Skip segments in this file">
+      <input type="checkbox" id="enabled">
+      <span></span>
+    </label>
+  </header>
+
+  <div id="status" class="status">Waiting for a file…</div>
+
+  <div id="segments" class="segments"></div>
+
+  <section id="editor">
+    <div class="section-title">New segment</div>
+    <div id="bounds" class="bounds"><span class="unset">No boundaries set</span></div>
+    <button id="set-boundary" type="button">Set boundary at current time</button>
+    <div class="row2">
+      <select id="category"></select>
+      <button id="submit" type="button" disabled>Submit</button>
+    </div>
+    <button id="clear" class="link" type="button">Clear boundaries</button>
+  </section>
+
+  <footer>
+    <span id="count"></span>
+    <button id="refresh" type="button">Refresh</button>
+  </footer>
+  </div>
+
+  <div id="no-video">No YouTube Video detected</div>
+
+  <script>
+    (function () {
+      const list = document.getElementById("segments");
+      const statusEl = document.getElementById("status");
+      const enabledEl = document.getElementById("enabled");
+      const boundsEl = document.getElementById("bounds");
+      const countEl = document.getElementById("count");
+      const categoryEl = document.getElementById("category");
+      const submitEl = document.getElementById("submit");
+      let state = null;
+      let categoriesFilled = false;
+
+      function clock(seconds) {
+        if (typeof seconds !== "number" || !isFinite(seconds)) return "--:--";
+        const whole = Math.max(0, Math.floor(seconds));
+        const pad = (value) => String(value).padStart(2, "0");
+        const hours = Math.floor(whole / 3600);
+        const body = pad(Math.floor((whole / 60) % 60)) + ":" + pad(whole % 60);
+        return hours > 0 ? hours + ":" + body : body;
+      }
+
+      function command(action, extra) {
+        iina.postMessage("command", Object.assign({ action: action }, extra || {}));
+      }
+
+      function iconButton(label, title, handler, extraClass) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "icon" + (extraClass ? " " + extraClass : "");
+        button.textContent = label;
+        button.title = title;
+        button.addEventListener("click", handler);
+        return button;
+      }
+
+      function row(segment) {
+        const element = document.createElement("div");
+        element.className = "row" + (segment.current ? " current" : "") + (segment.skipped ? " skipped" : "");
+
+        const time = document.createElement("div");
+        time.className = "time";
+        time.textContent = clock(segment.start) + " – " + clock(segment.end);
+
+        const category = document.createElement("div");
+        category.className = "category";
+        category.textContent = segment.category.replace(/_/g, " ");
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        actions.appendChild(
+          iconButton("▶", "Play from here", () => command("seek", { time: segment.start }))
+        );
+        actions.appendChild(
+          iconButton(
+            "↑",
+            "Upvote",
+            () => command("vote", { uuid: segment.uuid, up: true }),
+            segment.voted === "1" ? "on" : ""
+          )
+        );
+        actions.appendChild(
+          iconButton(
+            "↓",
+            "Downvote",
+            () => command("vote", { uuid: segment.uuid, up: false }),
+            segment.voted === "0" ? "on" : ""
+          )
+        );
+
+        element.appendChild(time);
+        element.appendChild(actions);
+        element.appendChild(category);
+        return element;
+      }
+
+      const appEl = document.getElementById("app");
+      const noVideoEl = document.getElementById("no-video");
+
+      function render(payload) {
+        if (!payload) return;
+        state = payload;
+
+        const isYouTube = Boolean(payload.videoId);
+        appEl.hidden = !isYouTube;
+        noVideoEl.hidden = isYouTube;
+        if (!isYouTube) return;
+
+        statusEl.textContent = payload.statusText || (payload.videoId ? payload.videoId : "No video");
+        statusEl.dataset.kind = payload.status || "";
+        enabledEl.checked = Boolean(payload.enabled);
+
+        if (!categoriesFilled && payload.categories && payload.categories.length) {
+          payload.categories.forEach((name) => {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name.replace(/_/g, " ");
+            categoryEl.appendChild(option);
+          });
+          categoriesFilled = true;
+        }
+
+        const scroll = list.scrollTop;
+        list.innerHTML = "";
+        if (!payload.segments || payload.segments.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          if (payload.status === "fetching") empty.textContent = "Fetching segments…";
+          else if (payload.status === "not-youtube") empty.textContent = "Not a YouTube video.";
+          else if (payload.status === "error") empty.textContent = "Could not reach the server.";
+          else empty.textContent = "No segments for this video.";
+          list.appendChild(empty);
+        } else {
+          payload.segments.forEach((segment) => list.appendChild(row(segment)));
+        }
+        list.scrollTop = scroll;
+
+        countEl.textContent = payload.segments ? payload.segments.length + " segments" : "";
+        countEl.title = payload.skipCategories && payload.skipCategories.length
+          ? "Skipping: " + payload.skipCategories.join(", ")
+          : "";
+
+        if (payload.boundaries && payload.boundaries.start !== null) {
+          boundsEl.innerHTML = "";
+          boundsEl.appendChild(document.createTextNode("A " + clock(payload.boundaries.start) + "  ·  B " + clock(payload.boundaries.end)));
+        } else {
+          boundsEl.innerHTML = '<span class="unset">No boundaries set</span>';
+        }
+        submitEl.disabled = !(payload.boundaries && payload.boundaries.start !== null) || !payload.videoId;
+      }
+
+      iina.onMessage("state", render);
+
+      enabledEl.addEventListener("change", () => command("toggle"));
+      document.getElementById("set-boundary").addEventListener("click", () => command("set-boundary"));
+      document.getElementById("clear").addEventListener("click", () => command("clear-boundaries"));
+      document.getElementById("refresh").addEventListener("click", () => command("refresh"));
+      submitEl.addEventListener("click", () => command("submit", { category: categoryEl.value }));
+    })();
+  </script>
+</body>
+</html>

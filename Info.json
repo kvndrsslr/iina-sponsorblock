@@ -1,0 +1,47 @@
+{
+  "name": "SponsorBlock",
+  "version": "2.1.0",
+  "identifier": "com.kdressler.iina-sponsorblock",
+  "author": {
+    "name": "kdressler"
+  },
+  "description": "SponsorBlock for YouTube videos: skips, fast forwards or fades sponsor segments, lists them in a sidebar with voting, and exposes segment submission through IINA menu items and shortcuts. A port of po5/mpv_sponsorblock.",
+  "entry": "main.js",
+  "preferencesPage": "ui/preferences.html",
+  "permissions": [
+    "show-osd",
+    "network-request"
+  ],
+  "allowedDomains": [
+    "sponsor.ajay.app"
+  ],
+  "preferenceDefaults": {
+    "server_address": "https://sponsor.ajay.app",
+    "categories": "sponsor,intro,outro,interaction,selfpromo,filler",
+    "skip_categories": "sponsor",
+    "skip": true,
+    "skip_once": true,
+    "user_id": "",
+    "display_name": "",
+    "report_views": true,
+    "auto_upvote": false,
+    "min_duration": 1,
+    "audio_fade": false,
+    "audio_fade_step": 10,
+    "audio_fade_cap": 0,
+    "fast_forward": false,
+    "fast_forward_increase": 0.2,
+    "fast_forward_cap": 2,
+    "sha256_length": 4,
+    "local_pattern": "",
+    "toggle_key": "b",
+    "set_segment_key": "g",
+    "submit_segment_key": "G",
+    "upvote_key": "h",
+    "downvote_key": "H",
+    "sidebar_key": "Meta+Shift+b"
+  },
+  "sidebarTab": {
+    "name": "SponsorBlock"
+  }
+}
